@@ -7,7 +7,6 @@ const { parse } = require('node-html-parser');
 class HTMLConstructor {
     /**
      * @description Constructor for strings using HTML tags
-     * @param {Object}  req Request object (DEPRECATED);
      * @param {Object}  res Response object
      * @param {String}  HTML HTML String
      * @param {Object}  options 
@@ -57,7 +56,7 @@ class HTMLConstructor {
      * 
     }
     */
-    constructor(req, res, HTML, options) {
+    constructor(res, HTML, options) {
 
             this.res = res;
             this.HTML = HTML.toString();
