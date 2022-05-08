@@ -37,6 +37,7 @@ npm install -s node-html-constructor
         foo: 'bar',
         hello: 'world' 
     },
+    log: true, // Print logs
     replaceArray, // Deprecated. Only continues to exist for backwards compatibility
     repeatArray // Deprecated. Only continues to exist for backwards compatibility
 })
