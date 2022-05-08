@@ -14,7 +14,12 @@ npm install -s node-html-constructor
  const fs = require('fs');
  
  // Create a new constructor
- const constructor = new HTMLConstructor(null,res,fs.readFileSync('./index.html'),{
+/**
+ * @param {Object} req Request Object (for sendToClient)
+ * @param {String} HTML HTML String
+ * @param {Object} options Constructor Options (View below)
+*/
+ const constructor = new HTMLConstructor(res, fs.readFileSync('./index.html').toString('utf-8'), {
     repeatObj: {
         repeatTag1: [ // finds <repeat id="repeatTag1">@FOO@    @HELLO@</repeat>
             { foo: 'bar', hello: 'world', _REPEAT_TEST_: (thisObject) => return thisObject.foo == 'bar' }, // will render this data
