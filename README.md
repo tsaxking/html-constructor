@@ -1,4 +1,4 @@
-# html-constructor
+# node-html-constructor
 Easy Server Side Rendering!
 
 # #installation
