@@ -1,28 +1,29 @@
 {
-  "name": "html-constructor",
-  "version": "1.0.0",
-  "description": "Easy Server Side Rendering!",
-  "main": "index.js",
-  "scripts": {
-    "test": "test"
-  },
-  "repository": {
-    "type": "git",
-    "url": "git+https://github.com/tsaxking/html-constructor.git"
-  },
-  "keywords": [
-    "ssr",
-    "html",
-    "constructor"
-  ],
-  "author": "Taylor Reese King",
-  "license": "ISC",
-  "bugs": {
-    "url": "https://github.com/tsaxking/html-constructor/issues"
-  },
-  "homepage": "https://github.com/tsaxking/html-constructor#readme",
-  "dependencies": {
-    "node-html-parser": "^5.3.3",
-    "sanitize": "^2.1.0"
-  }
+    "name": "node-html-constructor",
+    "version": "1.0.1",
+    "description": "Easy Server Side Rendering!",
+    "main": "index.js",
+    "scripts": {
+        "start": "node index.js",
+        "test": "node test.js"
+    },
+    "repository": {
+        "type": "git",
+        "url": "git+https://github.com/tsaxking/html-constructor.git"
+    },
+    "keywords": [
+        "ssr",
+        "html",
+        "constructor"
+    ],
+    "author": "Taylor Reese King",
+    "license": "ISC",
+    "bugs": {
+        "url": "https://github.com/tsaxking/html-constructor/issues"
+    },
+    "homepage": "https://github.com/tsaxking/html-constructor#readme",
+    "dependencies": {
+        "node-html-parser": "^5.3.3",
+        "sanitize": "^2.1.0"
+    }
 }

@@ -1,74 +1,71 @@
+'use-strict';
+
 // const fs = require('fs');
 const sanitizeHTML = require('sanitize');
 const { parse } = require('node-html-parser');
 
-
-
-/**
- * @description Constructor for strings using HTML tags
- * @param {string}  req Request from client NOT USED YET
- * @param {string}  res Response to client
- * @param {string}  HTML HTML String
- * @param {object}  options --- if you want to send everything after rendered. Returns rendered HTML regardless
-    sendToClient: bool,
-
-    --- if you want to use the sanitize-html package and remove all potential attacks
-    sanitizeHTML: bool,
-
-    --- In your sting, just put @YOUR_TOKEN_HERE@, must be UPPERCASE within @@
-    replaceArray: [
-        ["Replace this token regardless of case", "with this"],
-        ["token", "with this"],
-        ["token", "with this"]
-    ],
-
-    --- Repeats everything in <repeat id="repeatId"> tags for every replaceArray. Replaces <repeat and </repeat> with <div and </div>
-    repeatObj:{
-        repeatId: [
-            replaceArray, //(see above)
-            replaceArray,
-            replaceArray
-        ],
-        repeatId: [
-            replaceArray, //(see above)
-            replaceArray,
-            replaceArray
-        ]...
-    },
-
-    --- OPTIONAL REPEAT OPTIONS
-    replaceTags: {
-        --- If you want the <repeat> tags to be replaced with something other than <div>, put the new tag here, this corresponds with the repeatObj
-        "repeatID": 'newTag',
-        "repeatID": 'newTag',
-        "repeatID": 'newTag',
-    },
-
-    --- Replaces a set of tokens based on a boolean value
-    ifConditions: [
-        { replace: "token", valueIfTrue: "val", valueIfFalse: "val", condition: boolean },
-        { replace: "token", valueIfTrue: "val", valueIfFalse: "val", condition: boolean },
-        { replace: "token", valueIfTrue: "val", valueIfFalse: "val", condition: boolean }
-    ]
-}
- */
 class HTMLConstructor {
+    /**
+     * @description Constructor for strings using HTML tags
+     * @param {Object}  req Request object (DEPRECATED);
+     * @param {Object}  res Response object
+     * @param {String}  HTML HTML String
+     * @param {Object}  options 
+     * @param {Boolean} options.sendToClient if you want to send everything after rendered. Returns rendered HTML regardless
+     * @param {Boolean} options.sanitize if you want to use the sanitize-html package and remove all potential in-line attacks
+     * @param {Array} options.replaceArray (DON'T USE) Remains for backwards compatibility
+     * @param {Object} options.replaceObj key value pairs to replace in a string. Reserved keys: _REPEAT_NUM_ (0 based iterator) _REPEAT_TEST_ (Function to check if you want to display this data)
+     * @param {Array} options.repeatArray (DON'T USE) Remains for backwards compatibility
+     * @param {Object} options.repeatObj Repeats everything in <repeat id="repeatId"> tags for every replaceObj (See replaceObj). Replaces <repeat and </repeat> with <div and </div>
+     * @param {String} options.replaceTags If you want the <repeat> tags to be replaced with something other than <div>, put the new tag here, this corresponds with the repeatObj
+     * @param {Array} options.ifConditions Replaces a set of tokens based on boolean values. Can render "else if" type structure if needed. Structure: 
+     * 
+     * @example
+     *
+     * ```js
+     * const HTMLConstructor = require('node-html-constructor');
+     * const fs = require('fs');
+     * 
+     * // Create a new constructor
+     * const constructor = new HTMLConstructor(null,res,fs.readFileSync('./index.html'),{
+     *  repeatObj: {
+     *          repeatTag1: [
+     *              { foo: 'bar', hello: 'world', _REPEAT_TEST_: (thisObject) => return thisObject.foo == 'bar' }, // will render this data
+     *              { foo: 'foo', hello: 'bar', _REPEAT_TEST_: (thisObject) => return thisObject.foo == 'bar' }, // skips this data
+     *              { foo: 'foo', hello: 'bar' } // will also render this data
+     *          ]
+     *      },
+     *  ifConstructor: [
+     *      // replaces all '@FOO@' in html with 'bar' 
+     *      { replace: "foo", valueIfTrue: 'bar', valueIfFalse: '' (Obsolete with elseCondition), condition: true, elseCondition: false (Optional), elseTrue: 'hello' (value if else if is true), elseFalse: 'world' },
+     * ],
+     *  replaceTags: 'div', // Replaces all <repeat></repeat> tags with <div></div> Keeps all other data types (ie. id, classList, datasets, etc.),
+     *  sanitize: true, // uses require('sanitize') to remove all <script> and <style> tags as well as any inline-scripts/styles. (use this for client side inputs)
+     *  sendToClient: true, // requires a req object in the constructor. will send rendered html to client on constructor.render()
+     *  replaceObj: { // replaces all '@FOO@' with 'bar' and '@HELLO@' with 'world'. I recommend you use this after the repeatObj
+     *          foo: 'bar',
+     *          hello: 'world' 
+     *  },
+     *  replaceArray, // Deprecated. Only exists for backwards compatibility
+     *  repeatArray // Deprecated. Only exists for backwards compatibility
+     * })
+     * 
+     *  // Renders the html. Since sendToClient is true, will send to the client as a status 200.
+     *  // This will execute the above options in order (with the exception of sendToClient)
+        constructor.render();
+     * ```
+     * 
+    }
+    */
     constructor(req, res, HTML, options) {
-            // this.req = req;
+
             this.res = res;
-            // this.url = req.url;
-            // this.params = req.params;
-            // this.body = req.body;
-            // this.HTML = fs.readFileSync(`${__dirname.replace(/\\/g, "/")}${path}`).toString();
             this.HTML = HTML.toString();
-            this.replaceArray = options.replaceArray;
-            this.repeatObj = options.repeatObj;
-            this.ifConditions = options.ifConditions;
-            this.sendToClient = options.sendToClient;
-            this.replaceTags = options.replaceTags;
+
+            Object.keys(options).forEach(key => {
+                this[key] = options[key];
+            })
             this.options = options;
-            this.replaceObj = options.replaceObj;
-            this.sanitize = options.sanitize;
         }
         /**
          * @description Renders HTMLConstructor.HTML and sends if requested
@@ -157,13 +154,20 @@ class HTMLConstructor {
             if (!this.replaceTags) this.replaceTags = {}
             for (var repeatID in repeatObj) { // loops through all repeat arrays
                 HTML.querySelectorAll(`repeat#${repeatID}`).forEach(repeatSect => {
+                    if (repeatObj[repeatID]._REPEAT_TEST_) {
+                        if (typeof repeatObj[repeatID]._REPEAT_TEST_ != 'function') {
+                            console.error('ERROR: _REPEAT_TEST_ is not a function. Current value: ' + repeatObj[repeatID]._REPEAT_TEST_);
+                            return;
+                        }
+                        if (!repeatObj[repeatID]._REPEAT_TEST_(repeatObj[repeatID])) return;
+                    }
                     repeatSect.id = '';
                     let repeatArray = repeatObj[repeatID]; // extracts its repeatArray
                     let renderedSubStr = ''; // temporary string
                     let repeatNum = 1;
                     repeatArray.map(rplcArray => { // loops through array
                         try { if (rplcArray.indexOf(['repeat-num', repeatNum]) == -1) rplcArray.push(['repeat-num', repeatNum]); } catch (err) {
-                            if (!(rplcArray.repeat_num || rplcArray.repeatNum || rplcArray.num)) rplcArray.repeatNum = rplcArray.repeat_num || rplcArray.num || repeatNum;
+                            if (!rplcArray._REPEAT_NUM_) rplcArray._REPEAT_NUM_ = repeatNum;
                         }
                         let subStr = repeatSect.innerHTML; // extracts repeat section
                         try {
