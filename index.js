@@ -179,9 +179,16 @@ class HTMLConstructor {
                         renderedSubStr = renderedSubStr + subStr; // appends to rendered string
                         repeatNum++;
                     });
-                    repeatSect.innerHTML = renderedSubStr; // adds rendered contents
+                    if (typeof this.replaceTags == 'string') {
+                        const { replaceTags } = this;
+                        let newTag = parse(`<${replaceTags}></${replaceTags}>`);
+
+                        newTag.querySelector('div').appendChild(parse(renderedSubStr));
+                        console.log(newTag.outerHTML);
+
+                        repeatSect.innerHTML = newTag;
+                    } else repeatSect.innerHTML = renderedSubStr; // adds rendered contents
                     repeatSect.replaceWith(repeatSect.innerHTML);
-                    // if (!this.replaceTags[repeatID]) this.replaceTags[repeatID] = 'div';
                 });
             }
             return HTML.outerHTML;
@@ -223,5 +230,6 @@ class HTMLConstructor {
         return this.replaceAll(str, token, value);
     }
 }
+
 
 exports = module.exports = HTMLConstructor;

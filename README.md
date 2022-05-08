@@ -55,4 +55,4 @@ I am new to coding, so this package is more for me personally. I wrote it in my 
 I aim to keep backwards compatibility back to version 1.0.0 to the best of my ability, so if anyone uses this and updates, I want it to still work
 
 ## License
-[MIT](https://choosealicense.com/licenses/mit/)
+[ISC](https://choosealicense.com/licenses/isc/)
