@@ -183,7 +183,7 @@ class HTMLConstructor {
                         const { replaceTags } = this;
                         let newTag = parse(`<${replaceTags}></${replaceTags}>`);
 
-                        newTag.querySelector('div').appendChild(parse(renderedSubStr));
+                        newTag.querySelector(replaceTags).appendChild(parse(renderedSubStr));
                         console.log(newTag.outerHTML);
 
                         repeatSect.innerHTML = newTag;
