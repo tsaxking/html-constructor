@@ -10,8 +10,9 @@ class HTMLConstructor {
      * @param {Object}  res Response object
      * @param {String}  HTML HTML String
      * @param {Object}  options 
-     * @param {Boolean} options.sendToClient if you want to send everything after rendered. Returns rendered HTML regardless
-     * @param {Boolean} options.sanitize if you want to use the sanitize-html package and remove all potential in-line attacks
+     * @param {Object}  options.log if you want to view the logs of what the code is doing, make this true. Default is false.
+     * @param {Boolean} options.sendToClient if you want to send everything after rendered. Returns rendered HTML regardless. Default is false
+     * @param {Boolean} options.sanitize if you want to use the sanitize-html package and remove all potential in-line attacks. Default is false
      * @param {Array} options.replaceArray (DON'T USE) Remains for backwards compatibility
      * @param {Object} options.replaceObj key value pairs to replace in a string. Reserved keys: _REPEAT_NUM_ (0 based iterator) _REPEAT_TEST_ (Function to check if you want to display this data)
      * @param {Array} options.repeatArray (DON'T USE) Remains for backwards compatibility
@@ -45,6 +46,7 @@ class HTMLConstructor {
      *          foo: 'bar',
      *          hello: 'world' 
      *  },
+     *  log: true, // Prints logs
      *  replaceArray, // Deprecated. Only exists for backwards compatibility
      *  repeatArray // Deprecated. Only exists for backwards compatibility
      * })
@@ -63,7 +65,7 @@ class HTMLConstructor {
 
             Object.keys(options).forEach(key => {
                 this[key] = options[key];
-            })
+            });
             this.options = options;
         }
         /**
@@ -75,34 +77,34 @@ class HTMLConstructor {
             for (var x in this.options) {
                 if (x == "replaceArray") {
                     if (this.replaceArray) {
-                        console.log("Rendering replaceArray");
+                        if (this.log) console.log("Rendering replaceArray");
                         str = this.replaceValuesInArray(str, this.replaceArray, '@');
                     }
                 } else if (x == "repeatObj") {
                     if (this.repeatObj) {
-                        console.log('Rendering repeats');
+                        if (this.log) console.log('Rendering repeats');
                         str = this.repeat(str, this.repeatObj);
                     }
                 } else if (x == "ifConditions") {
                     if (this.ifConditions) {
-                        console.log("Rendering if conditions");
+                        if (this.log) console.log("Rendering if conditions");
                         str = this.ifConstructor(this.HTML, this.ifConditions);
                     }
                 } else if (x == "Sanitize") {
                     if (this.sanitize) {
-                        console.log("Sanitizing");
+                        if (this.log) console.log("Sanitizing");
                         str = sanitizeHTML(str);
                     }
                 } else if (x == "replaceObj") {
                     if (this.replaceObj) {
-                        console.log("Rendering replaceObj");
+                        if (this.log) console.log("Rendering replaceObj");
                         str = this.replaceValuesInObject(str, this.replaceObj, '@');
                     }
                 }
                 this.HTML = str;
             }
             if (this.sendToClient) {
-                console.log("Sending");
+                if (this.log) console.log("Sending rendered HTML to client");
                 this.res.status(200).send(str);
             }
             return str;
