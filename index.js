@@ -152,7 +152,6 @@ class HTMLConstructor {
          */
     repeat(str, repeatObj) {
             let HTML = parse(str);
-            if (!this.replaceTags) this.replaceTags = {}
             for (var repeatID in repeatObj) { // loops through all repeat arrays
                 HTML.querySelectorAll(`repeat#${repeatID}`).forEach(repeatSect => {
                     if (repeatObj[repeatID]._REPEAT_TEST_) {
@@ -179,16 +178,24 @@ class HTMLConstructor {
                         renderedSubStr = renderedSubStr + subStr; // appends to rendered string
                         repeatNum++;
                     });
-                    if (typeof this.replaceTags == 'string') {
-                        const { replaceTags } = this;
-                        let newTag = parse(`<${replaceTags}></${replaceTags}>`);
+                    if (repeatObj[repeatID + '_tag']) {
+                        const tag = repeatObj[repeatID + '_tag'];
 
-                        newTag.querySelector(replaceTags).appendChild(parse(renderedSubStr));
-                        console.log(newTag.outerHTML);
 
-                        repeatSect.innerHTML = newTag;
-                    } else repeatSect.innerHTML = renderedSubStr; // adds rendered contents
-                    repeatSect.replaceWith(repeatSect.innerHTML);
+                        let regexOpen = new RegExp('<repeat', 'g');
+                        let regexClose = new RegExp('</repeat>', 'g');
+
+                        let tagStr = repeatSect.outerHTML;
+
+                        tagStr = tagStr.replace(regexOpen, `<${tag}`);
+                        tagStr = tagStr.replace(regexClose, `</${tag}>`);
+
+                        repeatSect.replaceWith(tagStr);
+
+                    } else {
+                        repeatSect.innerHTML = renderedSubStr; // adds rendered contents
+                        repeatSect.replaceWith(repeatSect.innerHTML);
+                    }
                 });
             }
             return HTML.outerHTML;
