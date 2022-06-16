@@ -24,6 +24,6 @@
     "homepage": "https://github.com/tsaxking/html-constructor#readme",
     "dependencies": {
         "node-html-parser": "^5.3.3",
-        "sanitize": "^2.1.0"
+        "sanitize-html": "^2.7.0"
     }
 }
