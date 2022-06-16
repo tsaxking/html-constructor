@@ -1,5 +1,6 @@
 const { parse } = require("node-html-parser");
 const sanitize = require('sanitize-html');
+const fs = require('fs');
 
 class HTMLConstructor {
     /**
@@ -10,19 +11,31 @@ class HTMLConstructor {
      * @param {Object} res (OPTIONAL) Response Object
      */
     constructor(html, options, res) {
-        if (typeof html != 'string') throw new Error(`html must be a string! It's type is: ${typeof html}.\nIf you're using fs.readFileSync() be sure to add .toString('utf-8') or else HTMLConstructor cannot read it!`);
+
+        // if (typeof html != 'string') throw new Error(`html must be a string! It's type is: ${typeof html}`);
         if (typeof options != 'object') throw new Error(`options must be an object! It's type is: ${typeof options}`);
 
         this.options = options;
-        this.html = parse(html);
+        try {
+            this.html = parse(fs.readFileSync(html).toString('utf-8'));
+        } catch (err) {
+            this.html = parse(html.toString('utf-8'));
+        }
         if (res) {
             if (typeof res != 'object') throw new Error(`res must be an object! It's type is: ${typeof res}`);
             this.res = res;
         }
     }
 
+    sanitizeObj(obj) {
+        Object.keys(obj).forEach(k => {
+            obj[k] = sanitize(obj[k]);
+        });
+        return obj;
+    }
+
     repeatElement(element) {
-        const cstr = this.options[element.id];
+        let cstr = this.options[element.id];
         if (cstr === undefined) {
             console.log(`No constructor for <cstr type="repeat" id="${element.id}"></cstr> so it deleted the element`);
             return '';
@@ -33,6 +46,7 @@ class HTMLConstructor {
             let i = 1;
             cstr.forEach(repeat => {
                 if (typeof repeat != 'object') throw new Error(`Position ${i-1} in options.${element.id} must be an object. Type received: ${typeof repeat}`);
+                if (repeat._sanitize) repeat = this.sanitizeObj(repeat);
 
                 let newEl = element.innerHTML;
 
@@ -73,6 +87,7 @@ class HTMLConstructor {
             output = repeatEl;
         } else {
             if (!cstr._repeatNum) return;
+            if (cstr._sanitize) cstr = this.sanitizeObj(cstr);
 
             let repeatEl = '';
 
@@ -130,17 +145,19 @@ class HTMLConstructor {
             return '';
         }
 
-        delete this.options[element.id];
+        if (this.options[element.id]._sanitize) this.options[element.id] = this.sanitizeObj(this.options[element.id]);
 
         let output = eval(element.innerHTML);
+
+        delete this.options[element.id];
+
         return output;
     }
 
     replaceRest() {
         let replacedHTML = this.html.outerHTML;
         Object.keys(this.options).forEach(k => {
-
-            if (k == '_sanitize' || k == '_sendToClient') return;
+            if (k == '_sanitize') return;
             const regex = new RegExp(`{${k}}`, 'g');
             replacedHTML = replacedHTML.replace(regex, this.options[k]);
         });
