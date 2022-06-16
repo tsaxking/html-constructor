@@ -1,6 +1,6 @@
 {
     "name": "node-html-constructor",
-    "version": "1.3.0",
+    "version": "2.0.5",
     "description": "Easy Server Side Rendering!",
     "main": "index.js",
     "scripts": {
@@ -14,9 +14,14 @@
     "keywords": [
         "ssr",
         "html",
-        "constructor"
+        "constructor",
+        "server side rendering",
+        "html string",
+        "html rendering",
+        "inline-javascript",
+        "rendering"
     ],
-    "author": "Taylor Reese King",
+    "author": "tsaxking",
     "license": "ISC",
     "bugs": {
         "url": "https://github.com/tsaxking/html-constructor/issues"
@@ -24,6 +29,6 @@
     "homepage": "https://github.com/tsaxking/html-constructor#readme",
     "dependencies": {
         "node-html-parser": "^5.3.3",
-        "sanitize": "^2.1.0"
+        "sanitize-html": "^2.7.0"
     }
 }
