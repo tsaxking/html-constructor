@@ -1,5 +1,5 @@
 # node-html-constructor
-Easy Server Side Rendering!
+Easy Server Side Rendering! All information can be passed into a simple variable!
 
 ## Installation
 
@@ -251,6 +251,34 @@ This will generate:
 IMPORTANT: If you don't have _trustEval in this, it won't run the script
 
 Also, what's important to understand is the script will evaluate the scripts first, then replace. That's why I didn't put cstr.title, cstr.url, or cstr.name; the script was run first which allowed {title}, {url}, and {name} to be available.
+
+### ConstructorOptions can be as long as you want!
+You can have as many repeats, replaces, scripts, etc. as you want in your html and HTMLConstructor will render it! To do so, just place that information in constructorOptions!
+
+```javascript
+const fs = require('fs');
+const HTMLConstructor = require('node-html-constructor').v2;
+
+const cstrOpts = {
+    someRepeat: [
+        { firstName: 'Daniel', lastName: 'Craig' },
+        { firstName: 'Melissa', lastName: 'Fumero' }
+        { firstName: 'Robert', lastName: 'Downey Jr.' }
+    ],
+    someScript: {
+        title: 'Some title I want to pass in',
+        test: (() => {
+            return bool; // Maybe some test, idk!
+        })()
+    },
+    replaceMe: 'with this' // will {replaceMe} with this
+}
+
+const html = fs.readFileSync('./index.html').toString('utf-8');
+const cstr = new HTMLConstructor(html, cstrOpts);
+
+cstr.render();
+```
 
 ## Contribution
 I am new to coding, so this package is more for me personally. I hope to make this better so if you have any ideas, please let me know!

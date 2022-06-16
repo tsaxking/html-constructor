@@ -14,9 +14,14 @@
     "keywords": [
         "ssr",
         "html",
-        "constructor"
+        "constructor",
+        "server side rendering",
+        "html string",
+        "html rendering",
+        "inline-javascript",
+        "rendering"
     ],
-    "author": "Taylor Reese King",
+    "author": "tsaxking",
     "license": "ISC",
     "bugs": {
         "url": "https://github.com/tsaxking/html-constructor/issues"
