@@ -1,7 +1,7 @@
 'use-strict';
 
 // const fs = require('fs');
-const sanitizeHTML = require('sanitize');
+const sanitizeHTML = require('sanitize-html');
 const { parse } = require('node-html-parser');
 
 class HTMLConstructor {

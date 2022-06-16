@@ -10,7 +10,7 @@ class HTMLConstructor {
      * @param {Object} res (OPTIONAL) Response Object
      */
     constructor(html, options, res) {
-        if (typeof html != 'string') throw new Error(`html must be a string! It's type is: ${typeof html}`);
+        if (typeof html != 'string') throw new Error(`html must be a string! It's type is: ${typeof html}.\nIf you're using fs.readFileSync() be sure to add .toString('utf-8') or else HTMLConstructor cannot read it!`);
         if (typeof options != 'object') throw new Error(`options must be an object! It's type is: ${typeof options}`);
 
         this.options = options;
@@ -23,7 +23,7 @@ class HTMLConstructor {
 
     repeatElement(element) {
         const cstr = this.options[element.id];
-        if (!cstr) {
+        if (cstr === undefined) {
             console.log(`No constructor for <cstr type="repeat" id="${element.id}"></cstr> so it deleted the element`);
             return '';
         }
@@ -54,7 +54,7 @@ class HTMLConstructor {
                     newEl = newEl.innerHTML;
                 }
 
-                const _posRegex = /_pos/gi;
+                const _posRegex = /{_pos}/gi;
 
                 Object.keys(repeat).forEach(k => {
                     const regex = new RegExp(`\{${k}\}`, 'gi');
@@ -98,7 +98,7 @@ class HTMLConstructor {
                     newEl = newEl.innerHTML;
                 }
 
-                const _posRegex = /_pos/gi;
+                const _posRegex = /{_pos}/gi;
 
                 Object.keys(cstr).forEach(k => {
                     const regex = new RegExp(`\{${k}\}`, 'gi');
@@ -122,7 +122,7 @@ class HTMLConstructor {
 
     evalElement(element, type) {
         const cstr = this.options[element.id];
-        if (!cstr) {
+        if (cstr === undefined) {
             let elStr = type == 'script' ? `<script class="cstr" id="${element.id}"></script>` : `<cstr type="eval" id="${element.id}"></cstr>`;
             console.log(`No constructor for ${elStr} so the element has been deleted`);
             return '';
@@ -159,7 +159,7 @@ class HTMLConstructor {
             }
         });
 
-        this.html.querySelectorAll('script.cstr').forEach(el => {
+        this.html.querySelectorAll('script[cstr-type="eval"]').forEach(el => {
             el.replaceWith(this.evalElement(el));
         });
 
