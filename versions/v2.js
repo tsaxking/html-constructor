@@ -166,7 +166,7 @@ class HTMLConstructor {
         this.replaceRest();
 
         if (this.options._sanitize) this.html = parse(sanitize(this.html.outerHTML));
-        if (this.res) this.res.send(this.html.outerHTML);
+        if (this.res) this.res.status(200).send(this.html.outerHTML);
 
         return this.html.outerHTML;
     }
