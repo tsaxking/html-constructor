@@ -27,7 +27,8 @@ class HTMLConstructor {
             console.log(`No constructor for <cstr type="repeat" id="${element.id}"></cstr> so it deleted the element`);
             return '';
         }
-        let repeatEl = '';
+        let repeatEl = '',
+            output;
         if (Array.isArray(cstr)) {
             let i = 1;
             cstr.forEach(repeat => {
@@ -54,9 +55,10 @@ class HTMLConstructor {
                     newEl = newEl.innerHTML;
                 }
 
-                const _posRegex = /{_pos}/gi;
+                const _posRegex = new RegExp(`\{_pos\}`, 'gi');
 
                 Object.keys(repeat).forEach(k => {
+                    if (k == '_trustEval') return;
                     const regex = new RegExp(`\{${k}\}`, 'gi');
 
                     newEl = newEl.replace(regex, repeat[k]);
@@ -67,12 +69,10 @@ class HTMLConstructor {
                 repeatEl += newEl;
                 i++;
             });
-
-
-            repeatEl = parse(repeatEl);
+            // output = `<div>${repeatEl}</div>`;
+            output = repeatEl;
         } else {
             if (!cstr._repeatNum) return;
-
 
             let repeatEl = '';
 
@@ -98,9 +98,12 @@ class HTMLConstructor {
                     newEl = newEl.innerHTML;
                 }
 
-                const _posRegex = /{_pos}/gi;
+                const _posRegex = new RegExp(`\{_pos\}`, 'gi');
 
                 Object.keys(cstr).forEach(k => {
+                    if (k == '_repeatNum') return;
+                    if (k == '_trustEval') return;
+
                     const regex = new RegExp(`\{${k}\}`, 'gi');
 
                     newEl = newEl.replace(regex, cstr[k]);
@@ -109,15 +112,14 @@ class HTMLConstructor {
                 newEl = newEl.replace(_posRegex, i);
 
                 repeatEl += newEl;
-
             }
 
-            repeatEl = parse(repeatEl);
+            // output = `<div>${repeatEl}</div>`;
+            output = repeatEl;
         }
 
         delete this.options[element.id];
-
-        return repeatEl.innerHTML;
+        return parse(output).innerHTML;
     }
 
     evalElement(element, type) {
