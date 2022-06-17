@@ -4,7 +4,7 @@ Easy Server Side Rendering! All information can be passed into a simple variable
 ## Installation
 
 ```
-npm install -s node-html-constructor
+npm install node-html-constructor
 ```
 
 ## Usage

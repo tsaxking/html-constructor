@@ -50,7 +50,7 @@ class HTMLConstructor {
 
                 let newEl = element.innerHTML;
 
-                if (repeat._trustEval) {
+                if (this.options._trustEval || repeat._trustEval) {
                     newEl = parse(newEl);
 
                     newEl.querySelectorAll('cstr[type="eval"]').forEach(e => {
@@ -72,7 +72,7 @@ class HTMLConstructor {
                 const _posRegex = new RegExp(`\{_pos\}`, 'gi');
 
                 Object.keys(repeat).forEach(k => {
-                    if (k == '_trustEval') return;
+                    if (this.options._trustEval || k == '_trustEval') return;
                     const regex = new RegExp(`\{${k}\}`, 'gi');
 
                     newEl = newEl.replace(regex, repeat[k]);
@@ -95,7 +95,7 @@ class HTMLConstructor {
 
                 let newEl = element.innerHTML;
 
-                if (cstr._trustEval) {
+                if (this.options._trustEval || cstr._trustEval) {
                     newEl = parse(newEl);
 
                     newEl.querySelectorAll('cstr[type="eval"]').forEach(e => {
@@ -157,7 +157,7 @@ class HTMLConstructor {
     replaceRest() {
         let replacedHTML = this.html.outerHTML;
         Object.keys(this.options).forEach(k => {
-            if (k == '_sanitize') return;
+            if (k == '_sanitize' || k == '_trustEval') return;
             const regex = new RegExp(`{${k}}`, 'g');
             replacedHTML = replacedHTML.replace(regex, this.options[k]);
         });
