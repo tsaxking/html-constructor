@@ -12,8 +12,12 @@ npm install -s node-html-constructor
 Initializing takes 3 parameters, an html string, constructorOptions (I often abbreviate to cstrOpts), and optionally, a res object from express.
 
 ```javascript
+const HTMLConstructor = require('node-html-constructor').v2;
+// or
+const { HTMLConstructor } = require('node-html-constructor'); // this will always be the most recent, but may not be fully backwards compatible so be careful when updating!
+
 const cstr = new HTMLConstructor(
-    '<></>', // some html string (can be from file)
+    '<></>', // Either a path to an html file or an html string
     {}, // constructor options (I recommend initializing before and passing in as a variable)
     res // response object from express (adding this variable will automatically send rendered html using res.status(200).send(renderedHTML))
 );
@@ -42,12 +46,12 @@ Will be rendered into:
 ```html
 <h1>Hello world!</h1>
 ```
-Now, be sure to not have <cstr> tags below with the same id as the above or else it will not be replaced.
+Now, be sure to not have `<cstr>` tags below with the same id as the above or else it will not be replaced.
 
 ### Building your constructorOptions with HTML:
-This works in tandem with a custom html tag: <cstr>
+This works in tandem with a custom html tag: `<cstr>`
 
-In your "options" variable, each key works with a single <cstr> element with the id of the same name. Example:
+In your "options" variable, each key works with a single `<cstr>` element with the id of the same name. Example:
 ```html
 <cstr id="someElement">
 </cstr>
@@ -59,32 +63,32 @@ const cstrOpts = {
 }
 ```
 ### Types of constructorOptions:
-There are currently 2 types of <cstr> tags: eval and repeat. To create them, just type eval or repeat in the `cstr-type` attribute
+There are currently 2 types of `<cstr>` tags: eval and repeat. To create them, just type eval or repeat in the `cstr-type` attribute
 ```html
 <cstr cstr-type="eval"></cstr>
 <cstr cstr-type="repeat"></cstr>
 ```
 
-### Repeats! (<cstr cstr-type="repeat">)
+### Repeats! (`<cstr cstr-type="repeat">`)
 Honestly whenever I use HTMLConstructor, this is mostly what I use it for ;) I find this really handy for dynamic sites!
 
-Anything inside of a <cstr cstr-type="repeat"> tag can have its contents repeated with a very simple replace feature on each repeat similar to what's shown above.
+Anything inside of a `<cstr cstr-type="repeat">` tag can have its contents repeated with a very simple replace feature on each repeat similar to what's shown above.
 
 Say you want this:
 ```html
-<span id="thing-1">
+<span id="thing-0">
     <h1>Coffee</h1>
     <p>Is amazing</p>
 </span>
-<span id="thing-2">
+<span id="thing-1">
     <h1>Chocolate</h1>
     <p>Is best when dark</p>
 </span>
-<span id="thing-3">
+<span id="thing-2">
     <h1>Sushi</h1>
     <p>Tastes terrible (yeahhh sorry)</p>
 </span>
-<span id="thing-4">
+<span id="thing-3">
     <h1>Pasta</h1>
     <p>Is not quite as good as coffee, but still amazing</p>
 </span>
@@ -111,7 +115,7 @@ const cstrOpts = {
 ```
 And it will render the same thing as above!
 
-Notice, I also had an iterable variable called _pos (position) that was rendered. This is done by HTMLConstructor, you don't need to create it!
+Notice, I also had an iterable variable called `_pos` (position) that was rendered. This is done by HTMLConstructor, you don't need to create it! It will be a 0 based index
 
 If you want something that repeats a bunch of times but the only thing that changes is its position number (_pos), you don't need an array, you can do this:
 
@@ -128,9 +132,9 @@ const cstrOpts = {
     }
 }
 ```
-You can pass in other variables similar to the one before, but it could be useful! It's also possible to run a function in a repeat, but to do that you have to understand <cstr cstr-type="eval">
+You can pass in other variables similar to the one before, but it could be useful! It's also possible to run a function in a repeat, but to do that you have to understand `<cstr cstr-type="eval">`
 
-### Inline javascript! (<cstr cstr-type="eval">):
+### Inline javascript! (`<cstr cstr-type="eval">`):
 Eval will run any javascript in this tag and replace the entire contents with what the javascript returns. For example:
 ```html
 <p>
@@ -157,7 +161,7 @@ If your javascript is long and you're using an HTML formatter, it may put all yo
 #### Ensuring the scripts run
 Now, these will only be rendered if you have the keys in the constructor object! If you're not passing in any variables, you can just set them to be anything as long as they are not `undefined`!
 
-Any cstr or script with cstr-type="eval" will not be run if it is not in your options object. This is to help ensure no script you don't want to have run will be run. You can also sanitize any variables before passing them into your script if you're worried! How to do that is shown below.
+Any `<cstr>` or `<script>` with cstr-type="eval" will not be run if it is not in your options object. This is to help ensure no script you don't want to have run will be run. You can also sanitize any variables before passing them into your script if you're worried! How to do that is shown below.
 
 So, to run the above constructor eval, just do this:
 ```javascript
@@ -167,7 +171,7 @@ const cstrOpts = {
 }
 ```
 #### Passing in variables
-If you want to pass variables into your <cstr> javascript, you can do it! Any information you pass into the key will be readable by your cstr or script tags, this data will be in a variable called cstr!
+If you want to pass variables into your `<cstr>` javascript, you can do it! Any information you pass into the key will be readable by your cstr or script tags, this data will be in a variable called `cstr`!
 
 Here's how you can use it:
 
@@ -198,7 +202,7 @@ Then in your html:
 ```
 
 ### Combining repeats and evals!
-If you're running an evaluation inside a repeat <cstr>, you don't need to give the <cstr cstr-type="eval"> an id! In your repeat's constructorOptions, you have to set _trustEval = true.
+If you're running an evaluation inside a repeat `<cstr>`, you don't need to give the `<cstr cstr-type="eval">` an id! In your repeat's constructorOptions, you have to set `_trustEval = true`.
 
 ex:
 ```html
@@ -250,7 +254,7 @@ This will generate:
 ```
 IMPORTANT: If you don't have _trustEval in this, it won't run the script
 
-Also, what's important to understand is the script will evaluate the scripts first, then replace. That's why I didn't put cstr.title, cstr.url, or cstr.name; the script was run first which allowed {title}, {url}, and {name} to be available.
+Also, what's important to understand is the script will evaluate the scripts first, then replace. That's why I didn't put `cstr.title`, `cstr.url`, or `cstr.name`; the script was run first which allowed `{title}`, `{url}`, and `{name}` to be available.
 
 ### ConstructorOptions can be as long as you want!
 You can have as many repeats, replaces, scripts, etc. as you want in your html and HTMLConstructor will render it! To do so, just place that information in constructorOptions!
@@ -283,16 +287,54 @@ cstr.render();
 ## Contribution
 I am new to coding, so this package is more for me personally. I hope to make this better so if you have any ideas, please let me know!
 
+## Future of HTMLConstructor
+Here are the plans I have for HTMLConstructor's future!
+
+### Sanitizing (using sanitize-html)
+By adding in `_sanitize: true` to ConstructorOptions, HTMLConstructor will sanitize all input variables in the same scope of `_sanitize: true`.
+
+Ex:
+```javascript
+const cstrOpts = {
+    someRepeat: [
+        {
+            _sanitize: true // this will sanitize all variables in cstrOpts.someRepeat in every position
+        }
+    ],
+    someScript: {
+        _sanitize: true // this will sanitize all variables in cstrOpts.someScript before passing them into your script
+    },
+    _sanitize: true // this will sanitize all variables in cstrOpts (making the other two _sanitize variables useless lol)
+}
+```
+
+### Shorthand and other `<cstr>` tags
+I plan on using tags like:
+```html
+<eval>
+<repeat>
+```
+And some shorthands like:
+```html
+{rp (
+        <!-- Repeat elements in this section -->
+    )
+}
+{js (
+        <!-- evaluate js in this section -->
+    )
+}
+```
+I still have yet to figure out some good ideas around that, but I'll be updating when possible.
 
 ## Updates
 I aim to keep backwards compatibility back to version 1.0.0 to the best of my ability, so if anyone uses this and updates, I want it to still work
 
-Everything will still work from 1.3.0 and before if you change this:
+All code will still work from 1.0.0 to the current version, all code will be stored in .v(versionNumber)
 ```javascript
 require('node-html-constructor').v1; // Full backwards compatibility 1.3.0 and before (This was the last update before 2.0.0)
-require('node-html-constructor').v2 // 2.0.0 and up
+require('node-html-constructor').v2; // 2.0.0 and up
 ```
-However it is deprecated
 
 #### Version 1.0.0 - 1.3.0 Usage:
 ```javascript

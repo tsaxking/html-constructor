@@ -6,7 +6,6 @@ const { parse } = require('node-html-parser');
 
 class HTMLConstructor {
     /**
-     * @deprecated Try the new HTMLConstructor! (The update will still work with the old HTMLConstructor)
      * @description Constructor for strings using HTML tags
      * @param {Object}  res Response object
      * @param {String}  HTML HTML String
