@@ -102,7 +102,7 @@ class HTMLConstructor {
                 if (this.options._trustEval || cstr._trustEval) {
                     newEl = parse(newEl);
 
-                    newEl.querySelectorAll('cstr[type="eval"]').forEach(e => {
+                    newEl.querySelectorAll('[cstr-type="eval"]').forEach(e => {
                         let evaluation = eval(e.innerHTML);
                         e.replaceWith(evaluation);
                     });
@@ -110,7 +110,7 @@ class HTMLConstructor {
                     newEl = newEl.innerHTML;
                 } else {
                     newEl = parse(newEl);
-                    newEl.querySelectorAll('cstr[type="eval"]').forEach(e => {
+                    newEl.querySelectorAll('[cstr-type="eval"]').forEach(e => {
                         e.replaceWith('');
                     });
 
