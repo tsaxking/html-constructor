@@ -47,7 +47,7 @@ class HTMLConstructor {
         let repeatEl = '',
             output;
         if (Array.isArray(cstr)) {
-            let i = 1;
+            let i = 0;
             cstr.forEach(repeat => {
                 if (typeof repeat != 'object') throw new Error(`Position ${i-1} in options.${element.id} must be an object. Type received: ${typeof repeat}`);
                 if (repeat._sanitize) repeat = this.sanitizeObj(repeat);
@@ -95,7 +95,7 @@ class HTMLConstructor {
 
             let repeatEl = '';
 
-            for (var i = 1; i <= cstr._repeatNum; i++) {
+            for (var i = 0; i < cstr._repeatNum; i++) {
 
                 let newEl = element.innerHTML;
 
