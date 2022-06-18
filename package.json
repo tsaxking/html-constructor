@@ -1,6 +1,6 @@
 {
     "name": "node-html-constructor",
-    "version": "2.0.8",
+    "version": "2.0.9",
     "description": "Easy Server Side Rendering!",
     "main": "index.js",
     "scripts": {
