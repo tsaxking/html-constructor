@@ -29,7 +29,11 @@ class HTMLConstructor {
 
     sanitizeObj(obj) {
         Object.keys(obj).forEach(k => {
-            obj[k] = sanitize(obj[k]);
+            try {
+                obj[k] = sanitize(obj[k]);
+            } catch (err) {
+                console.error(`Cannot sanitize ${k} in object, its value: ${obj[k]}`);
+            }
         });
         return obj;
     }
@@ -37,7 +41,7 @@ class HTMLConstructor {
     repeatElement(element) {
         let cstr = this.options[element.id];
         if (cstr === undefined) {
-            console.log(`No constructor for <cstr type="repeat" id="${element.id}"></cstr> so it deleted the element`);
+            console.log(`No constructor for <cstr type="repeat" id="${element.id}"></cstr> the element was deleted.`);
             return '';
         }
         let repeatEl = '',
@@ -53,7 +57,7 @@ class HTMLConstructor {
                 if (this.options._trustEval || repeat._trustEval) {
                     newEl = parse(newEl);
 
-                    newEl.querySelectorAll('cstr[type="eval"]').forEach(e => {
+                    newEl.querySelectorAll('[cstr-type="eval"]').forEach(e => {
                         let cstr = repeat;
                         let evaluation = eval(e.innerHTML);
                         e.replaceWith(evaluation);
@@ -62,7 +66,7 @@ class HTMLConstructor {
                     newEl = newEl.innerHTML;
                 } else {
                     newEl = parse(newEl);
-                    newEl.querySelectorAll('cstr[type="eval"]').forEach(e => {
+                    newEl.querySelectorAll('[cstr-type="eval"]').forEach(e => {
                         e.replaceWith('');
                     });
 
