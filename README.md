@@ -11,6 +11,13 @@ npm install node-html-constructor
 ```
 
 ## Usage
+
+### Latest update:
+```javascript
+const { render } = require('node-html-constructor').v3; // v3 uses v2 HTMLConstructor but through a function and not as a class
+render(html, cstrOpts, res); // view what this means below
+```
+
 ### How to initialize:
 Initializing takes 3 parameters, an html string, constructorOptions (I often abbreviate to cstrOpts), and optionally, a res object from express.
 
