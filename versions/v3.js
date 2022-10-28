@@ -12,4 +12,4 @@ function render(html, options, res) {
     return cstr.render();
 }
 
-module.exports = render;
+module.exports = { render };
