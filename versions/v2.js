@@ -40,9 +40,9 @@ class HTMLConstructor {
 
     repeatElement(element) {
         let cstr = this.options[element.id];
-        if (cstr === undefined) {
-            console.log(`No constructor for <cstr type="repeat" id="${element.id}"></cstr> the element was deleted.`);
-            return '';
+        if (!cstr) {
+            console.log(`No constructor for <cstr type="repeat" id="${element.id}"></cstr> the element was not rendered`);
+            return element.outerHTML;
         }
         let repeatEl = '',
             output;
@@ -145,8 +145,8 @@ class HTMLConstructor {
         const cstr = this.options[element.id];
         if (cstr === undefined) {
             let elStr = type == 'script' ? `<script class="cstr" id="${element.id}"></script>` : `<cstr type="eval" id="${element.id}"></cstr>`;
-            console.log(`No constructor for ${elStr} so the element has been deleted`);
-            return '';
+            console.log(`No constructor for ${elStr} so the element was not rendered`);
+            return element.outerHTML;
         }
 
         if (this.options[element.id]._sanitize) this.options[element.id] = this.sanitizeObj(this.options[element.id]);
