@@ -212,7 +212,7 @@ Then in your html:
 ```
 
 ### Combining repeats and evals!
-If you're running an evaluation inside a repeat `<cstr>`, you don't need to give the `<cstr cstr-type="eval">` an id! In your repeat's constructorOptions, you have to set `_trustEval = true`.
+If you're running an evaluation inside a repeat `<cstr>`, you don't need to give the `<cstr cstr-type="repeat-eval">` an id! In your repeat's constructorOptions, you have to set `_trustEval = true`.
 
 ex:
 ```html
