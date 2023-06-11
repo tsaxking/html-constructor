@@ -11,7 +11,6 @@ class HTMLConstructor {
      * @param {Object} res (OPTIONAL) Response Object
      */
     constructor(html, options, res) {
-
         // if (typeof html != 'string') throw new Error(`html must be a string! It's type is: ${typeof html}`);
         if (typeof options != 'object') throw new Error(`options must be an object! It's type is: ${typeof options}`);
 

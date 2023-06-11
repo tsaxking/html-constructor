@@ -107,3 +107,5 @@ dist
 # Tests
 test.js
 test.html
+test-rendered.html
+test.*
