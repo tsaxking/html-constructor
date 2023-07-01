@@ -80,7 +80,7 @@ const replace = (html: HTMLElement, cstr: Constructor): HTMLElement => {
     html.innerHTML = html.innerHTML.replace(regex, (match, key) => {
         const val = cstr[key];
         if (val === undefined) {
-            console.warn(`Key ${key} is undefined in ${html.id}`);
+            console.warn(`Key ${key} is undefined in ${cstr}`);
             return match;
         }
         return val.toString();
