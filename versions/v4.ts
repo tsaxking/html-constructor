@@ -2,7 +2,7 @@ import parse, { HTMLElement } from 'node-html-parser';
 import sanitize from 'sanitize-html';
 import * as fs from 'fs';
 import * as path from 'path';
-import { Request, Response } from 'express';
+import { NextFunction, Request, Response } from 'express';
 import '@total-typescript/ts-reset';
 
 
@@ -65,8 +65,6 @@ const evaluate = (html: HTMLElement, id: string, cstr: Constructor): HTMLElement
                 ${innerHTML}
             })(cstr);
         `);
-
-        // console.log(val);
 
         if (typeof val !== 'string') throw new Error('Script must return a string');
     } catch (e) {
@@ -135,3 +133,27 @@ const render = (html: string, cstr: Constructor, res?: Response): string => {
 };
 
 export default render;
+
+
+type EngineParameters = {
+    next?: boolean;
+}
+
+declare global {
+    namespace Express {
+        interface Request {
+            render: (html: string, cstr: Constructor) => Error|void;
+        }
+    }
+}
+
+export const engine = (parameters: EngineParameters) => (req: Request, res: Response, next: NextFunction) => {
+    req.render = (html: string, cstr: Constructor) => {
+        try {
+            render(html, cstr, res);
+            if (parameters.next) return next();
+        } catch (e) {
+            return e;
+        }
+    };
+}
