@@ -1,5 +1,4 @@
 import parse, { HTMLElement } from 'node-html-parser';
-import sanitize from 'sanitize-html';
 import * as fs from 'fs';
 import * as path from 'path';
 import { NextFunction, Request, Response } from 'express';
@@ -56,7 +55,19 @@ const runRepeat = (html: HTMLElement, cstr: Constructor[]): HTMLElement[] => {
 };
 
 const evaluate = (html: HTMLElement, id: string, cstr: Constructor): HTMLElement => {
-    const { innerHTML } = html; // pure javascript
+    let { innerHTML } = html; // pure javascript
+
+    const notAllowed = [
+        'html', 'id', 'cstr', 'this', 'innerHTML', 'val', 'require'
+    ];
+
+    for (const key of notAllowed) {
+        if (innerHTML.includes(key)) {
+            console.error(`Key ${key} is not allowed in script ${id}`);
+            return html;
+        }
+    }
+
     let val: string;
     try {
         val = eval(`
@@ -65,6 +76,13 @@ const evaluate = (html: HTMLElement, id: string, cstr: Constructor): HTMLElement
                 ${innerHTML}
             })(cstr);
         `);
+
+        // val = eval.call(null, `
+        //     (function(c) {
+        //         const { ${Object.keys(cstr).join(',')} } = c;
+        //         ${innerHTML};
+        //     })(cstr);
+        // `);
 
         if (typeof val !== 'string') throw new Error('Script must return a string');
     } catch (e) {
@@ -75,9 +93,9 @@ const evaluate = (html: HTMLElement, id: string, cstr: Constructor): HTMLElement
 };
 
 const replace = (html: HTMLElement, cstr: Constructor): HTMLElement => {
-    // find {{ key }} in html
+    // find {{ key }} in html, ignoring newlines and whitespace
     const regex = /{{\s*([a-zA-Z0-9_]+)\s*}}/g;
-    html.innerHTML = html.innerHTML.replace(regex, (match, key) => {
+    html.innerHTML = html.innerHTML.replace(regex, (match: string, key: string) => {
         const val = cstr[key];
         if (val === undefined) {
             console.warn(`Key ${key} is undefined in ${cstr}`);
@@ -135,27 +153,27 @@ const render = (html: string, cstr: Constructor, res?: Response): string => {
 export default render;
 
 
-type EngineParameters = {
-    next?: boolean;
-    viewsDir: string;
-}
+// type EngineParameters = {
+//     next?: boolean;
+//     viewsDir: string;
+// }
 
-declare global {
-    namespace Express {
-        interface Request {
-            render: (html: string, cstr: Constructor) => Promise<Error|void>;
-        }
-    }
-}
+// declare global {
+//     namespace Express {
+//         interface Request {
+//             render: (html: string, cstr: Constructor) => Promise<Error|void>;
+//         }
+//     }
+// }
 
-export const engine = (parameters: EngineParameters) => (req: Request, res: Response, next: NextFunction) => {
-    req.render = async (template: string, cstr: Constructor) => {
-        try {
-            const html = path.join(parameters.viewsDir, template);
-            render(html, cstr);
-            if (parameters.next) return next();
-        } catch (e) {
-            return e;
-        }
-    };
-}
+// export const engine = (parameters: EngineParameters) => (req: Request, res: Response, next: NextFunction) => {
+//     req.render = async (template: string, cstr: Constructor) => {
+//         try {
+//             const html = path.join(parameters.viewsDir, template);
+//             render(html, cstr);
+//             if (parameters.next) return next();
+//         } catch (e) {
+//             return e;
+//         }
+//     };
+// }
