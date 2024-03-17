@@ -153,27 +153,3 @@ const render = (html: string, cstr: Constructor, res?: Response): string => {
 export default render;
 
 
-// type EngineParameters = {
-//     next?: boolean;
-//     viewsDir: string;
-// }
-
-// declare global {
-//     namespace Express {
-//         interface Request {
-//             render: (html: string, cstr: Constructor) => Promise<Error|void>;
-//         }
-//     }
-// }
-
-// export const engine = (parameters: EngineParameters) => (req: Request, res: Response, next: NextFunction) => {
-//     req.render = async (template: string, cstr: Constructor) => {
-//         try {
-//             const html = path.join(parameters.viewsDir, template);
-//             render(html, cstr);
-//             if (parameters.next) return next();
-//         } catch (e) {
-//             return e;
-//         }
-//     };
-// }
