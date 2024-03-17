@@ -111,6 +111,8 @@ const render = (html: string, cstr: Constructor, res?: Response): string => {
         html = fs.readFileSync(html).toString();
     }
 
+    console.log(cstr);
+
     const root = parse(html);
 
     const repeats = root.querySelectorAll('repeat');
@@ -119,12 +121,13 @@ const render = (html: string, cstr: Constructor, res?: Response): string => {
 
 
     for (const repeat of repeats) {
+        console.log(cstr[repeat.id])
         if (Array.isArray(cstr[repeat.id])) {
             const replace = runRepeat(repeat, cstr[repeat.id] as Constructor[]);
             repeat.replaceWith(...replace);
         } else {
             console.warn(`Repeat ${repeat.id} is not an array, it has been removed.`);
-            repeat.remove();
+            // repeat.remove();
         }
 
         delete cstr[repeat.id];
@@ -138,20 +141,26 @@ const render = (html: string, cstr: Constructor, res?: Response): string => {
             script.replaceWith(replace);
         } else {
             console.warn(`Script ${script.id} is not defined, it has been removed.`);
-            script.remove();
+            // script.remove();
         }
 
         delete cstr[script.id];
     }
 
     for (const i of ifs) {
-        renderIfs(i, cstr);
+        renderIfs(i, cstr[i.id] as Constructor);
         delete cstr[i.id];
     }
 
     if (res) {
         res.status(200).send(root.outerHTML);
     }
+
+    // cleanup
+
+    root.querySelectorAll('script[cstr]').forEach(s => s.remove());
+    root.querySelectorAll('repeat').forEach(r => r.remove());
+    root.querySelectorAll('if').forEach(i => i.remove());
 
     return replace(root, cstr).outerHTML;
 };
@@ -160,48 +169,43 @@ const renderIfs = (html: HTMLElement, cstr: Constructor) => {
     const { id } = html;
     const elseRoot = html.parentNode.querySelector(`else#${id}`);
 
-    if (cstr[id]) {
-        html.removeAttribute('id');
-        const attributes = html.attributes;
-        delete attributes.id; // this is likely not necessary, but just in case
+    html.removeAttribute('id');
+    const attributes = html.attributes;
+    delete attributes.id; // this is likely not necessary, but just in case
 
 
-        if (Object.keys(attributes).length === 1) {
-            const [key, val] = Object.entries(attributes)[0];
+    if (Object.keys(attributes).length === 1) {
+        const [key, val] = Object.entries(attributes)[0];
 
-            if (typeof cstr[id] === 'object') {
-                if (cstr[id]?.[key] == val) {
-                    html.replaceWith(render(html.innerHTML, cstr[id] as Constructor));
-                    elseRoot?.remove();
-                } else {
-                    if (elseRoot) {
-                        elseRoot.removeAttribute('id');
-                        elseRoot.replaceWith(render(elseRoot.innerHTML, cstr[id] as Constructor));
-                    }
-                    html.remove();
-                }
+        if (typeof cstr === 'object') {
+            if (cstr?.[key] == val) {
+                html.replaceWith(render(html.innerHTML, cstr));
+                elseRoot?.remove();
             } else {
-                if (cstr[id] === val) {
-                    html.replaceWith(parse(html.innerHTML));
-                    elseRoot?.remove();
-                } else {
-                    if (elseRoot) {
-                        elseRoot.removeAttribute('id');
-                        elseRoot.replaceWith(parse(elseRoot.innerHTML));
-                    }
-                    html.remove();
+                if (elseRoot) {
+                    elseRoot.removeAttribute('id');
+                    elseRoot.replaceWith(render(elseRoot.innerHTML, cstr));
                 }
+                html.remove();
             }
         } else {
-            console.warn(`<if> ${id} has more than one attribute, it has been removed.`);
-            elseRoot?.remove();
+            if (cstr === val) {
+                html.replaceWith(parse(html.innerHTML));
+                elseRoot?.remove();
+            } else {
+                if (elseRoot) {
+                    elseRoot.removeAttribute('id');
+                    elseRoot.replaceWith(parse(elseRoot.innerHTML));
+                }
+                html.remove();
+            }
         }
-
     } else {
-        console.warn(`<if> ${id} is not defined, it has been removed.`);
-        html.remove();
+        console.warn(`<if> ${id} has more than one attribute, it has been removed.`);
         elseRoot?.remove();
     }
+
+    return html;
 };
 
 export default render;

@@ -83,19 +83,21 @@ var render = function (html, cstr, res) {
     if (html.endsWith('.html') && fs.existsSync(html)) {
         html = fs.readFileSync(html).toString();
     }
+    console.log(cstr);
     var root = (0, node_html_parser_1.default)(html);
     var repeats = root.querySelectorAll('repeat');
     var scripts = root.querySelectorAll('script[cstr]');
     var ifs = root.querySelectorAll('if');
     for (var _i = 0, repeats_1 = repeats; _i < repeats_1.length; _i++) {
         var repeat = repeats_1[_i];
+        console.log(cstr[repeat.id]);
         if (Array.isArray(cstr[repeat.id])) {
             var replace_1 = runRepeat(repeat, cstr[repeat.id]);
             repeat.replaceWith.apply(repeat, replace_1);
         }
         else {
             console.warn("Repeat ".concat(repeat.id, " is not an array, it has been removed."));
-            repeat.remove();
+            // repeat.remove();
         }
         delete cstr[repeat.id];
     }
@@ -109,67 +111,63 @@ var render = function (html, cstr, res) {
         }
         else {
             console.warn("Script ".concat(script.id, " is not defined, it has been removed."));
-            script.remove();
+            // script.remove();
         }
         delete cstr[script.id];
     }
     for (var _b = 0, ifs_1 = ifs; _b < ifs_1.length; _b++) {
         var i = ifs_1[_b];
-        renderIfs(i, cstr);
+        renderIfs(i, cstr[i.id]);
         delete cstr[i.id];
     }
     if (res) {
         res.status(200).send(root.outerHTML);
     }
+    // cleanup
+    root.querySelectorAll('script[cstr]').forEach(function (s) { return s.remove(); });
+    root.querySelectorAll('repeat').forEach(function (r) { return r.remove(); });
+    root.querySelectorAll('if').forEach(function (i) { return i.remove(); });
     return replace(root, cstr).outerHTML;
 };
 var renderIfs = function (html, cstr) {
-    var _a;
     var id = html.id;
     var elseRoot = html.parentNode.querySelector("else#".concat(id));
-    console.log(elseRoot);
-    if (cstr[id]) {
-        html.removeAttribute('id');
-        var attributes = html.attributes;
-        delete attributes.id; // this is likely not necessary, but just in case
-        if (Object.keys(attributes).length === 1) {
-            var _b = Object.entries(attributes)[0], key = _b[0], val = _b[1];
-            if (typeof cstr[id] === 'object') {
-                if (((_a = cstr[id]) === null || _a === void 0 ? void 0 : _a[key]) == val) {
-                    html.replaceWith(render(html.innerHTML, cstr[id]));
-                    elseRoot === null || elseRoot === void 0 ? void 0 : elseRoot.remove();
-                }
-                else {
-                    if (elseRoot) {
-                        elseRoot.removeAttribute('id');
-                        elseRoot.replaceWith(render(elseRoot.innerHTML, cstr[id]));
-                    }
-                    html.remove();
-                }
+    html.removeAttribute('id');
+    var attributes = html.attributes;
+    delete attributes.id; // this is likely not necessary, but just in case
+    if (Object.keys(attributes).length === 1) {
+        var _a = Object.entries(attributes)[0], key = _a[0], val = _a[1];
+        if (typeof cstr === 'object') {
+            if ((cstr === null || cstr === void 0 ? void 0 : cstr[key]) == val) {
+                html.replaceWith(render(html.innerHTML, cstr));
+                elseRoot === null || elseRoot === void 0 ? void 0 : elseRoot.remove();
             }
             else {
-                if (cstr[id] === val) {
-                    html.replaceWith((0, node_html_parser_1.default)(html.innerHTML));
-                    elseRoot === null || elseRoot === void 0 ? void 0 : elseRoot.remove();
+                if (elseRoot) {
+                    elseRoot.removeAttribute('id');
+                    elseRoot.replaceWith(render(elseRoot.innerHTML, cstr));
                 }
-                else {
-                    if (elseRoot) {
-                        elseRoot.removeAttribute('id');
-                        elseRoot.replaceWith((0, node_html_parser_1.default)(elseRoot.innerHTML));
-                    }
-                    html.remove();
-                }
+                html.remove();
             }
         }
         else {
-            console.warn("<if> ".concat(id, " has more than one attribute, it has been removed."));
-            elseRoot === null || elseRoot === void 0 ? void 0 : elseRoot.remove();
+            if (cstr === val) {
+                html.replaceWith((0, node_html_parser_1.default)(html.innerHTML));
+                elseRoot === null || elseRoot === void 0 ? void 0 : elseRoot.remove();
+            }
+            else {
+                if (elseRoot) {
+                    elseRoot.removeAttribute('id');
+                    elseRoot.replaceWith((0, node_html_parser_1.default)(elseRoot.innerHTML));
+                }
+                html.remove();
+            }
         }
     }
     else {
-        console.warn("<if> ".concat(id, " is not defined, it has been removed."));
-        html.remove();
+        console.warn("<if> ".concat(id, " has more than one attribute, it has been removed."));
         elseRoot === null || elseRoot === void 0 ? void 0 : elseRoot.remove();
     }
+    return html;
 };
 exports.default = render;
