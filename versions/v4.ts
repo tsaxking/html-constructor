@@ -106,9 +106,8 @@ const replace = (html: HTMLElement, cstr: Constructor): HTMLElement => {
     return html;
 };
 
-
 const render = (html: string, cstr: Constructor, res?: Response): string => {
-    if (fs.existsSync(html)) {
+    if (html.endsWith('.html') && fs.existsSync(html)) {
         html = fs.readFileSync(html).toString();
     }
 
@@ -116,6 +115,8 @@ const render = (html: string, cstr: Constructor, res?: Response): string => {
 
     const repeats = root.querySelectorAll('repeat');
     const scripts = root.querySelectorAll('script[cstr]');
+    const ifs = root.querySelectorAll('if');
+
 
     for (const repeat of repeats) {
         if (Array.isArray(cstr[repeat.id])) {
@@ -143,6 +144,11 @@ const render = (html: string, cstr: Constructor, res?: Response): string => {
         delete cstr[script.id];
     }
 
+    for (const i of ifs) {
+        renderIfs(i, cstr);
+        delete cstr[i.id];
+    }
+
     if (res) {
         res.status(200).send(root.outerHTML);
     }
@@ -150,6 +156,52 @@ const render = (html: string, cstr: Constructor, res?: Response): string => {
     return replace(root, cstr).outerHTML;
 };
 
+const renderIfs = (html: HTMLElement, cstr: Constructor) => {
+    const { id } = html;
+    const elseRoot = html.parentNode.querySelector(`else#${id}`);
+
+    if (cstr[id]) {
+        html.removeAttribute('id');
+        const attributes = html.attributes;
+        delete attributes.id; // this is likely not necessary, but just in case
+
+
+        if (Object.keys(attributes).length === 1) {
+            const [key, val] = Object.entries(attributes)[0];
+
+            if (typeof cstr[id] === 'object') {
+                if (cstr[id]?.[key] == val) {
+                    html.replaceWith(render(html.innerHTML, cstr[id] as Constructor));
+                    elseRoot?.remove();
+                } else {
+                    if (elseRoot) {
+                        elseRoot.removeAttribute('id');
+                        elseRoot.replaceWith(render(elseRoot.innerHTML, cstr[id] as Constructor));
+                    }
+                    html.remove();
+                }
+            } else {
+                if (cstr[id] === val) {
+                    html.replaceWith(parse(html.innerHTML));
+                    elseRoot?.remove();
+                } else {
+                    if (elseRoot) {
+                        elseRoot.removeAttribute('id');
+                        elseRoot.replaceWith(parse(elseRoot.innerHTML));
+                    }
+                    html.remove();
+                }
+            }
+        } else {
+            console.warn(`<if> ${id} has more than one attribute, it has been removed.`);
+            elseRoot?.remove();
+        }
+
+    } else {
+        console.warn(`<if> ${id} is not defined, it has been removed.`);
+        html.remove();
+        elseRoot?.remove();
+    }
+};
+
 export default render;
-
-
