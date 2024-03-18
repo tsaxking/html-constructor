@@ -106,24 +106,28 @@ const replace = (html: HTMLElement, cstr: Constructor): HTMLElement => {
     return html;
 };
 
-
 const render = (html: string, cstr: Constructor, res?: Response): string => {
-    if (fs.existsSync(html)) {
+    if (html.endsWith('.html') && fs.existsSync(html)) {
         html = fs.readFileSync(html).toString();
     }
+
+    console.log(cstr);
 
     const root = parse(html);
 
     const repeats = root.querySelectorAll('repeat');
     const scripts = root.querySelectorAll('script[cstr]');
+    const ifs = root.querySelectorAll('if');
+
 
     for (const repeat of repeats) {
+        console.log(cstr[repeat.id])
         if (Array.isArray(cstr[repeat.id])) {
             const replace = runRepeat(repeat, cstr[repeat.id] as Constructor[]);
             repeat.replaceWith(...replace);
         } else {
             console.warn(`Repeat ${repeat.id} is not an array, it has been removed.`);
-            repeat.remove();
+            // repeat.remove();
         }
 
         delete cstr[repeat.id];
@@ -137,43 +141,71 @@ const render = (html: string, cstr: Constructor, res?: Response): string => {
             script.replaceWith(replace);
         } else {
             console.warn(`Script ${script.id} is not defined, it has been removed.`);
-            script.remove();
+            // script.remove();
         }
 
         delete cstr[script.id];
+    }
+
+    for (const i of ifs) {
+        renderIfs(i, cstr[i.id] as Constructor);
+        delete cstr[i.id];
     }
 
     if (res) {
         res.status(200).send(root.outerHTML);
     }
 
+    // cleanup
+
+    root.querySelectorAll('script[cstr]').forEach(s => s.remove());
+    root.querySelectorAll('repeat').forEach(r => r.remove());
+    root.querySelectorAll('if').forEach(i => i.remove());
+
     return replace(root, cstr).outerHTML;
 };
 
+const renderIfs = (html: HTMLElement, cstr: Constructor) => {
+    const { id } = html;
+    const elseRoot = html.parentNode.querySelector(`else#${id}`);
+
+    html.removeAttribute('id');
+    const attributes = html.attributes;
+    delete attributes.id; // this is likely not necessary, but just in case
+
+
+    if (Object.keys(attributes).length === 1) {
+        const [key, val] = Object.entries(attributes)[0];
+
+        if (typeof cstr === 'object') {
+            if (cstr?.[key] == val) {
+                html.replaceWith(render(html.innerHTML, cstr));
+                elseRoot?.remove();
+            } else {
+                if (elseRoot) {
+                    elseRoot.removeAttribute('id');
+                    elseRoot.replaceWith(render(elseRoot.innerHTML, cstr));
+                }
+                html.remove();
+            }
+        } else {
+            if (cstr === val) {
+                html.replaceWith(parse(html.innerHTML));
+                elseRoot?.remove();
+            } else {
+                if (elseRoot) {
+                    elseRoot.removeAttribute('id');
+                    elseRoot.replaceWith(parse(elseRoot.innerHTML));
+                }
+                html.remove();
+            }
+        }
+    } else {
+        console.warn(`<if> ${id} has more than one attribute, it has been removed.`);
+        elseRoot?.remove();
+    }
+
+    return html;
+};
+
 export default render;
-
-
-// type EngineParameters = {
-//     next?: boolean;
-//     viewsDir: string;
-// }
-
-// declare global {
-//     namespace Express {
-//         interface Request {
-//             render: (html: string, cstr: Constructor) => Promise<Error|void>;
-//         }
-//     }
-// }
-
-// export const engine = (parameters: EngineParameters) => (req: Request, res: Response, next: NextFunction) => {
-//     req.render = async (template: string, cstr: Constructor) => {
-//         try {
-//             const html = path.join(parameters.viewsDir, template);
-//             render(html, cstr);
-//             if (parameters.next) return next();
-//         } catch (e) {
-//             return e;
-//         }
-//     };
-// }
