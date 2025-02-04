@@ -1,18 +1,10 @@
 import parse, { HTMLElement } from 'node-html-parser';
 import * as fs from 'fs';
-import * as path from 'path';
-import { NextFunction, Request, Response } from 'express';
 import '@total-typescript/ts-reset';
-
-
-
-
 
 export type Constructor = {
     [key: string]: string | number | boolean | undefined | Constructor[] | Constructor;
 }
-
-
 
 const runRepeat = (html: HTMLElement, cstr: Constructor[]): HTMLElement[] => {
     return cstr.map((c) => {
@@ -106,7 +98,7 @@ const replace = (html: HTMLElement, cstr: Constructor): HTMLElement => {
     return html;
 };
 
-const render = (html: string, cstr: Constructor, res?: Response): string => {
+const render = (html: string, cstr: Constructor): string => {
     if (html.endsWith('.html') && fs.existsSync(html)) {
         html = fs.readFileSync(html).toString();
     }
@@ -150,10 +142,6 @@ const render = (html: string, cstr: Constructor, res?: Response): string => {
     for (const i of ifs) {
         renderIfs(i, cstr[i.id] as Constructor);
         delete cstr[i.id];
-    }
-
-    if (res) {
-        res.status(200).send(root.outerHTML);
     }
 
     // cleanup
