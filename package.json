@@ -5,7 +5,7 @@
   "main": "lib/cjs/index.js",
   "module": "lib/esm/index.js",
   "types": "lib/esm/index.d.ts",
-  "type": "commonjs",
+  "type": "module",
   "scripts": {
     "build": "tsc && tsc -p tsconfig.commonjs.json && node ./scripts/post-build.js",
     "install": "npm run build",
@@ -27,11 +27,5 @@
     "@esbuild-kit/esm-loader": "^2.6.5",
     "@total-typescript/ts-reset": "^0.6.1",
     "@types/node": "^22.13.1"
-  },
-  "exports": {
-    ".": {
-      "import": "./lib/esm/index.js",
-      "require": "./lib/cjs/index.js"
-    }
   }
 }

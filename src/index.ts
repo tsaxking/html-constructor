@@ -98,7 +98,7 @@ const replace = (html: HTMLElement, cstr: Constructor): HTMLElement => {
     return html;
 };
 
-const render = (html: string, cstr: Constructor): string => {
+export const render = (html: string, cstr: Constructor): string => {
     if (html.endsWith('.html') && fs.existsSync(html)) {
         html = fs.readFileSync(html).toString();
     }
@@ -193,5 +193,3 @@ const renderIfs = (html: HTMLElement, cstr: Constructor) => {
 
     return html;
 };
-
-export default render;
