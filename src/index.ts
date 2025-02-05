@@ -103,8 +103,6 @@ const render = (html: string, cstr: Constructor): string => {
         html = fs.readFileSync(html).toString();
     }
 
-    console.log(cstr);
-
     const root = parse(html);
 
     const repeats = root.querySelectorAll('repeat');
