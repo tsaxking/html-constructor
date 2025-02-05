@@ -1,19 +1,12 @@
-import { parseHTML, Node, HTMLElement, Element } from 'linkedom';
+import parse, { HTMLElement } from 'node-html-parser';
 import * as fs from 'fs';
 import '@total-typescript/ts-reset';
-
-// type HTMLElement = Node;
-
-const parse = (html: string) => {
-    const { document } = parseHTML(html);
-    return document.body;
-};
 
 export type Constructor = {
     [key: string]: string | number | boolean | undefined | Constructor[] | Constructor;
 }
 
-const runRepeat = (html: Element, cstr: Constructor[]): Element[] => {
+const runRepeat = (html: HTMLElement, cstr: Constructor[]): HTMLElement[] => {
     return cstr.map((c) => {
         const tag = html.getAttribute('tag');
 
@@ -53,7 +46,7 @@ const runRepeat = (html: Element, cstr: Constructor[]): Element[] => {
     });
 };
 
-const evaluate = (html: Element, id: string, cstr: Constructor): Element => {
+const evaluate = (html: HTMLElement, id: string, cstr: Constructor): HTMLElement => {
     let { innerHTML } = html; // pure javascript
 
     const notAllowed = [
@@ -91,7 +84,7 @@ const evaluate = (html: Element, id: string, cstr: Constructor): Element => {
     return parse(val);
 };
 
-const replace = (html: Element, cstr: Constructor): Element => {
+const replace = (html: HTMLElement, cstr: Constructor): HTMLElement => {
     // find {{ key }} in html, ignoring newlines and whitespace
     const regex = /{{\s*([a-zA-Z0-9_]+)\s*}}/g;
     html.innerHTML = html.innerHTML.replace(regex, (match: string, key: string) => {
@@ -105,7 +98,7 @@ const replace = (html: Element, cstr: Constructor): Element => {
     return html;
 };
 
-export const render = (html: string, cstr: Constructor): string => {
+const render = (html: string, cstr: Constructor): string => {
     if (html.endsWith('.html') && fs.existsSync(html)) {
         html = fs.readFileSync(html).toString();
     }
@@ -118,11 +111,13 @@ export const render = (html: string, cstr: Constructor): string => {
 
 
     for (const repeat of repeats) {
+        console.log(cstr[repeat.id])
         if (Array.isArray(cstr[repeat.id])) {
             const replace = runRepeat(repeat, cstr[repeat.id] as Constructor[]);
             repeat.replaceWith(...replace);
         } else {
             console.warn(`Repeat ${repeat.id} is not an array, it has been removed.`);
+            // repeat.remove();
         }
 
         delete cstr[repeat.id];
@@ -156,19 +151,17 @@ export const render = (html: string, cstr: Constructor): string => {
     return replace(root, cstr).outerHTML;
 };
 
-const renderIfs = (html: Element, cstr: Constructor) => {
+const renderIfs = (html: HTMLElement, cstr: Constructor) => {
     const { id } = html;
-    const elseRoot = html.parentElement?.querySelector(`else#${id}`);
+    const elseRoot = html.parentNode.querySelector(`else#${id}`);
 
     html.removeAttribute('id');
     const attributes = html.attributes;
-    attributes.removeNamedItem; // this is likely not necessary, but just in case
+    delete attributes.id; // this is likely not necessary, but just in case
 
 
-    if (attributes.length === 1) {
-        // const [key, val] = Object.entries(attributes)[0];
-        const key = attributes[0].name;
-        const val = attributes[0].value;
+    if (Object.keys(attributes).length === 1) {
+        const [key, val] = Object.entries(attributes)[0];
 
         if (typeof cstr === 'object') {
             if (cstr?.[key] == val) {
@@ -200,3 +193,5 @@ const renderIfs = (html: Element, cstr: Constructor) => {
 
     return html;
 };
+
+export default render;

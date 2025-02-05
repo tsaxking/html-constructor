@@ -16,7 +16,7 @@
   "license": "ISC",
   "dependencies": {
     "@eslint/compat": "^1.2.4",
-    "linkedom": "^0.18.7",
+    "node-html-parser": "^7.0.1",
     "prettier": "^3.4.2",
     "ts-utils": "github:tsaxking/global-ts-utilities",
     "vite-node": "^3.0.5",
