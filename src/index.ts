@@ -1,12 +1,19 @@
-import parse, { HTMLElement } from 'node-html-parser';
+import { parseHTML, Node, HTMLElement, Element } from 'linkedom';
 import * as fs from 'fs';
 import '@total-typescript/ts-reset';
+
+// type HTMLElement = Node;
+
+const parse = (html: string) => {
+    const { document } = parseHTML(html);
+    return document.body;
+};
 
 export type Constructor = {
     [key: string]: string | number | boolean | undefined | Constructor[] | Constructor;
 }
 
-const runRepeat = (html: HTMLElement, cstr: Constructor[]): HTMLElement[] => {
+const runRepeat = (html: Element, cstr: Constructor[]): Element[] => {
     return cstr.map((c) => {
         const tag = html.getAttribute('tag');
 
@@ -46,7 +53,7 @@ const runRepeat = (html: HTMLElement, cstr: Constructor[]): HTMLElement[] => {
     });
 };
 
-const evaluate = (html: HTMLElement, id: string, cstr: Constructor): HTMLElement => {
+const evaluate = (html: Element, id: string, cstr: Constructor): Element => {
     let { innerHTML } = html; // pure javascript
 
     const notAllowed = [
@@ -84,7 +91,7 @@ const evaluate = (html: HTMLElement, id: string, cstr: Constructor): HTMLElement
     return parse(val);
 };
 
-const replace = (html: HTMLElement, cstr: Constructor): HTMLElement => {
+const replace = (html: Element, cstr: Constructor): Element => {
     // find {{ key }} in html, ignoring newlines and whitespace
     const regex = /{{\s*([a-zA-Z0-9_]+)\s*}}/g;
     html.innerHTML = html.innerHTML.replace(regex, (match: string, key: string) => {
@@ -111,13 +118,11 @@ const render = (html: string, cstr: Constructor): string => {
 
 
     for (const repeat of repeats) {
-        console.log(cstr[repeat.id])
         if (Array.isArray(cstr[repeat.id])) {
             const replace = runRepeat(repeat, cstr[repeat.id] as Constructor[]);
             repeat.replaceWith(...replace);
         } else {
             console.warn(`Repeat ${repeat.id} is not an array, it has been removed.`);
-            // repeat.remove();
         }
 
         delete cstr[repeat.id];
@@ -151,17 +156,19 @@ const render = (html: string, cstr: Constructor): string => {
     return replace(root, cstr).outerHTML;
 };
 
-const renderIfs = (html: HTMLElement, cstr: Constructor) => {
+const renderIfs = (html: Element, cstr: Constructor) => {
     const { id } = html;
-    const elseRoot = html.parentNode.querySelector(`else#${id}`);
+    const elseRoot = html.parentElement?.querySelector(`else#${id}`);
 
     html.removeAttribute('id');
     const attributes = html.attributes;
-    delete attributes.id; // this is likely not necessary, but just in case
+    attributes.removeNamedItem; // this is likely not necessary, but just in case
 
 
-    if (Object.keys(attributes).length === 1) {
-        const [key, val] = Object.entries(attributes)[0];
+    if (attributes.length === 1) {
+        // const [key, val] = Object.entries(attributes)[0];
+        const key = attributes[0].name;
+        const val = attributes[0].value;
 
         if (typeof cstr === 'object') {
             if (cstr?.[key] == val) {
