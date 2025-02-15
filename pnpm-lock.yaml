@@ -20,6 +20,9 @@ importers:
       ts-utils:
         specifier: github:tsaxking/global-ts-utilities
         version: https://codeload.github.com/tsaxking/global-ts-utilities/tar.gz/574e1bbb5ab19e4a380a88d06c50b510bb1f8bfb
+      typescript:
+        specifier: ^5.7.3
+        version: 5.7.3
       vite-node:
         specifier: ^3.0.5
         version: 3.0.5(@types/node@22.13.1)
