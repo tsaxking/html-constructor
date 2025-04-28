@@ -1,9 +1,14 @@
 import parse, { HTMLElement } from 'node-html-parser';
 import * as fs from 'fs';
 import '@total-typescript/ts-reset';
+import path from 'path';
 
 export type Constructor = {
     [key: string]: string | number | boolean | undefined | Constructor[] | Constructor;
+}
+
+export type RenderConfig = {
+    root?: string; // root path for file loading
 }
 
 const runRepeat = (html: HTMLElement, cstr: Constructor[]): HTMLElement[] => {
@@ -98,20 +103,24 @@ const replace = (html: HTMLElement, cstr: Constructor): HTMLElement => {
     return html;
 };
 
-export const render = (html: string, cstr: Constructor): string => {
+export const render = (html: string, cstr: Constructor, config?: RenderConfig): string => {
     if (html.endsWith('.html') && fs.existsSync(html)) {
         html = fs.readFileSync(html).toString();
     }
 
     const root = parse(html);
 
+    const files = root.querySelectorAll('file');
     const repeats = root.querySelectorAll('repeat');
     const scripts = root.querySelectorAll('script[cstr]');
     const ifs = root.querySelectorAll('if');
+    const switches = root.querySelectorAll('switch');
 
+    for (const file of files) {
+        renderFiles(file, cstr, config);
+    }
 
     for (const repeat of repeats) {
-        console.log(cstr[repeat.id])
         if (Array.isArray(cstr[repeat.id])) {
             const replace = runRepeat(repeat, cstr[repeat.id] as Constructor[]);
             repeat.replaceWith(...replace);
@@ -142,6 +151,11 @@ export const render = (html: string, cstr: Constructor): string => {
         delete cstr[i.id];
     }
 
+    for (const s of switches) {
+        renderSwitch(s, cstr);
+        delete cstr[s.id];
+    }
+
     // cleanup
 
     root.querySelectorAll('script[cstr]').forEach(s => s.remove());
@@ -151,45 +165,167 @@ export const render = (html: string, cstr: Constructor): string => {
     return replace(root, cstr).outerHTML;
 };
 
+
 const renderIfs = (html: HTMLElement, cstr: Constructor) => {
-    const { id } = html;
-    const elseRoot = html.parentNode.querySelector(`else#${id}`);
+    const id = html.getAttribute('id');
+    if (!id) {
+        console.warn('<if> is missing an id attribute.');
+        html.remove();
+        return html;
+    }
 
-    html.removeAttribute('id');
-    const attributes = html.attributes;
-    delete attributes.id; // this is likely not necessary, but just in case
+    const condition = (typeof cstr === 'object') ? cstr[id] : cstr;
+    const elseElement = html.querySelector('else');
 
+    html.removeAttribute('id'); // Clean up so output looks clean
 
-    if (Object.keys(attributes).length === 1) {
-        const [key, val] = Object.entries(attributes)[0];
-
-        if (typeof cstr === 'object') {
-            if (cstr?.[key] == val) {
-                html.replaceWith(render(html.innerHTML, cstr));
-                elseRoot?.remove();
-            } else {
-                if (elseRoot) {
-                    elseRoot.removeAttribute('id');
-                    elseRoot.replaceWith(render(elseRoot.innerHTML, cstr));
-                }
-                html.remove();
-            }
-        } else {
-            if (cstr === val) {
-                html.replaceWith(parse(html.innerHTML));
-                elseRoot?.remove();
-            } else {
-                if (elseRoot) {
-                    elseRoot.removeAttribute('id');
-                    elseRoot.replaceWith(parse(elseRoot.innerHTML));
-                }
-                html.remove();
-            }
-        }
+    if (condition) {
+        elseElement?.remove();
+        html.replaceWith(render(html.innerHTML, cstr));
     } else {
-        console.warn(`<if> ${id} has more than one attribute, it has been removed.`);
-        elseRoot?.remove();
+        if (elseElement) {
+            elseElement.remove();
+            html.replaceWith(render(elseElement.innerHTML, cstr));
+        } else {
+            html.remove();
+        }
     }
 
     return html;
 };
+
+// import { Parser } from 'expr-eval';
+
+// const parser = new Parser();
+
+// const evalExpr = (expr: string, cstr: Constructor) => {
+//     try {
+//         const compiled = parser.parse(expr);
+//         return compiled.evaluate(cstr);
+//     } catch (err) {
+//         console.warn(`Error evaluating expr: ${expr}`, err);
+//         return false;
+//     }
+// };
+
+let cache: Map<string, { date: number; content: string }> | undefined = undefined;
+
+export const setupCache = (timer: number) => {
+    cache = new Map<string, { date: number; content: string }>();
+    setInterval(() => {
+        if (!cache) return; // will never happen, but just in case
+        const now = Date.now();
+        for (const [key, value] of cache.entries()) {
+            if (now - value.date > timer) { // 5 minutes
+                cache.delete(key);
+            }
+        }
+    }, timer);
+};
+
+
+
+
+const renderFiles = (html: HTMLElement, cstr: Constructor, config?: RenderConfig) => {
+    if (!config?.root) {
+        console.warn('Root path is not set. No files will be loaded. Set the root path in the render(html, cstr, { root: "path" }) parameter.');
+        html.remove();
+        return;
+    }
+    const id = html.getAttribute('id');
+    const src = html.getAttribute('src');
+
+    if (!id || !src) {
+        console.warn('<file> tag must have both id and src attributes');
+        html.remove();
+        return;
+    }
+
+    try {
+        const subCstr = cstr[id];
+        if (typeof subCstr !== 'object' || Array.isArray(subCstr)) {
+            throw new Error(`Sub-Constructor ${id} is an invalid type. It must be a non-array object for <file> tags.`);
+        }
+
+        let file = '';
+        if (cache && cache.has(src)) {
+            const cached = cache.get(src);
+            if (cached) { // this will always be true
+                cached.date = Date.now();
+                file = cached.content;
+            }
+        } else {
+            file = fs.readFileSync(path.join(config?.root, src), 'utf-8');
+            cache?.set(src, {
+                date: Date.now(),
+                content: file,
+            });
+        }
+
+        const fragmentElement = parse(file);
+
+        // Render the fragment with the sub-cstr
+        const rendered = render(fragmentElement.outerHTML, subCstr);
+
+        html.replaceWith(rendered);
+    } catch (err) {
+        console.warn(`Failed to load file from "${src}"`, err);
+        html.remove();
+    }
+    return html;
+};
+
+export const renderSwitch = (html: HTMLElement, cstr: Constructor) => {
+    const id = html.getAttribute('id');
+    
+    // Check if the 'id' attribute exists
+    if (!id) {
+        console.warn('<switch> is missing an id attribute.');
+        html.remove();
+        return html;
+    }
+
+    const condition = cstr[id];
+    const cases = html.querySelectorAll('case');
+    const defaultCase = html.querySelector('default');
+    
+    // Handle the default case if present
+    if (defaultCase) {
+        defaultCase.remove();
+        html.appendChild(defaultCase);
+    }
+
+    if (condition === undefined) {
+        console.warn(`Condition ${id} is undefined.`);
+        html.remove();
+        return html;
+    }
+
+    let matched = false;
+    
+    for (const c of cases) {
+        const caseCondition = c.getAttribute('value');
+        console.log(`Case condition: ${caseCondition}, Condition: ${condition}`, caseCondition === condition);
+
+        if (matched && !html.hasAttribute('multiple')) {
+            c.remove();
+            break;
+        }
+        if (caseCondition === condition) {
+            c.replaceWith(render(c.innerHTML, cstr)); 
+            matched = true;
+        } else {
+            c.remove();
+        }
+    }
+
+    if (!matched && defaultCase) {
+        defaultCase.replaceWith(render(defaultCase.innerHTML, cstr));
+    }
+
+    defaultCase?.remove();
+
+    // return html;
+    html.replaceWith(...html.childNodes);
+};
+

@@ -8,13 +8,15 @@
   "scripts": {
     "build": "tsc && tsc -p tsconfig.commonjs.json && node ./scripts/post-build.js",
     "install": "pnpm run build",
-    "test": "vitest"
+    "test": "vitest --disable-console-intercept",
+    "run": "npx vite-node ./src/file.test.ts"
   },
   "keywords": [],
   "author": "",
   "license": "ISC",
   "dependencies": {
     "@eslint/compat": "^1.2.4",
+    "expr-eval": "^2.0.2",
     "node-html-parser": "^7.0.1",
     "prettier": "^3.4.2",
     "ts-utils": "github:tsaxking/global-ts-utilities",
