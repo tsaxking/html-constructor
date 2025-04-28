@@ -7,12 +7,40 @@ const html = fs.readFileSync(path.resolve(__dirname, './html', 'test.html'), 'ut
 const now = performance.now();
 console.log(render(html, {
     title: 'Test',
-    myIf: false,
-    myFile: {
-        data: 'Hi!',
-    }
+    pages: [
+        {
+            page: {
+                content: '1',
+            }
+        },
+        {
+            page: {
+                content: '2',
+            }
+        },
+        {
+            page: {
+                content: '3',
+            }
+        },
+        {
+            page: {
+                content: '4',
+            }
+        },
+        {
+            page: {
+                content: '5',
+            }
+        },
+        {
+            page: {
+                content: '6',
+            }
+        }
+    ]
 }, {
-    root: __dirname,
+    root: path.resolve(__dirname, './html'),
 }));
 
 console.log('Time taken:', performance.now() - now);

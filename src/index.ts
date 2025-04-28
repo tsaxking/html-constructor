@@ -11,13 +11,13 @@ export type RenderConfig = {
     root?: string; // root path for file loading
 }
 
-const runRepeat = (html: HTMLElement, cstr: Constructor[]): HTMLElement[] => {
+const runRepeat = (html: HTMLElement, cstr: Constructor[], config?: RenderConfig): HTMLElement[] => {
     return cstr.map((c) => {
         const tag = html.getAttribute('tag');
 
         const { innerHTML } = html;
         const root = parse(innerHTML);
-        let rendered = render(root.outerHTML, c);
+        let rendered = render(root.outerHTML, c, config);
 
         if (tag) {
             rendered = `<${tag}>${rendered}</${tag}>`;
@@ -103,6 +103,68 @@ const replace = (html: HTMLElement, cstr: Constructor): HTMLElement => {
     return html;
 };
 
+// export const render = (html: string, cstr: Constructor, config?: RenderConfig): string => {
+//     if (html.endsWith('.html') && fs.existsSync(html)) {
+//         html = fs.readFileSync(html).toString();
+//     }
+
+//     const root = parse(html);
+
+//     const files = root.querySelectorAll('file');
+//     const repeats = root.querySelectorAll('repeat');
+//     const scripts = root.querySelectorAll('script[cstr]');
+//     const ifs = root.querySelectorAll('if');
+//     const switches = root.querySelectorAll('switch');
+
+//     for (const file of files) {
+//         renderFiles(file, cstr, config);
+//     }
+
+//     for (const repeat of repeats) {
+//         if (Array.isArray(cstr[repeat.id])) {
+//             const replace = runRepeat(repeat, cstr[repeat.id] as Constructor[]);
+//             repeat.replaceWith(...replace);
+//         } else {
+//             console.warn(`Repeat ${repeat.id} is not an array, it has been removed.`);
+//             // repeat.remove();
+//         }
+
+//         delete cstr[repeat.id];
+//     }
+
+//     for (const script of scripts) {
+//         const obj = cstr[script.id];
+//         if (obj) {
+//             const replace = evaluate(script, script.id, obj as Constructor);
+//             // console.log(replace.outerHTML);
+//             script.replaceWith(replace);
+//         } else {
+//             console.warn(`Script ${script.id} is not defined, it has been removed.`);
+//             // script.remove();
+//         }
+
+//         delete cstr[script.id];
+//     }
+
+//     for (const i of ifs) {
+//         renderIfs(i, cstr[i.id] as Constructor);
+//         delete cstr[i.id];
+//     }
+
+//     for (const s of switches) {
+//         renderSwitch(s, cstr);
+//         delete cstr[s.id];
+//     }
+
+//     // cleanup
+
+//     root.querySelectorAll('script[cstr]').forEach(s => s.remove());
+//     root.querySelectorAll('repeat').forEach(r => r.remove());
+//     root.querySelectorAll('if').forEach(i => i.remove());
+
+//     return replace(root, cstr).outerHTML;
+// };
+
 export const render = (html: string, cstr: Constructor, config?: RenderConfig): string => {
     if (html.endsWith('.html') && fs.existsSync(html)) {
         html = fs.readFileSync(html).toString();
@@ -110,63 +172,61 @@ export const render = (html: string, cstr: Constructor, config?: RenderConfig): 
 
     const root = parse(html);
 
-    const files = root.querySelectorAll('file');
-    const repeats = root.querySelectorAll('repeat');
-    const scripts = root.querySelectorAll('script[cstr]');
-    const ifs = root.querySelectorAll('if');
-    const switches = root.querySelectorAll('switch');
+    const walk = (node: HTMLElement) => {
+        for (const child of [...node.childNodes]) { // clone list so it's stable while modifying
+            if (!(child instanceof HTMLElement)) continue;
 
-    for (const file of files) {
-        renderFiles(file, cstr, config);
-    }
+            switch (child.tagName.toLowerCase()) {
+                case 'file':
+                    renderFiles(child, cstr, config);
+                    break;
+                case 'repeat':
+                    if (Array.isArray(cstr[child.id])) {
+                        const replace = runRepeat(child, cstr[child.id] as Constructor[], config);
+                        child.replaceWith(...replace);
+                    } else {
+                        console.warn(`Repeat ${child.id} is not an array, it has been removed.`);
+                        child.remove();
+                    }
+                    delete cstr[child.id];
+                    break;
+                case 'script':
+                    if (child.hasAttribute('cstr')) {
+                        const obj = cstr[child.id];
+                        if (obj) {
+                            const replace = evaluate(child, child.id, obj as Constructor);
+                            child.replaceWith(replace);
+                        } else {
+                            console.warn(`Script ${child.id} is not defined, it has been removed.`);
+                            child.remove();
+                        }
+                        delete cstr[child.id];
+                    }
+                    break;
+                case 'if':
+                    renderIfs(child, cstr[child.getAttribute('id')!] as Constructor, config);
+                    delete cstr[child.getAttribute('id')!];
+                    break;
+                case 'switch':
+                    renderSwitch(child, cstr, config);
+                    delete cstr[child.getAttribute('id')!];
+                    break;
+            }
 
-    for (const repeat of repeats) {
-        if (Array.isArray(cstr[repeat.id])) {
-            const replace = runRepeat(repeat, cstr[repeat.id] as Constructor[]);
-            repeat.replaceWith(...replace);
-        } else {
-            console.warn(`Repeat ${repeat.id} is not an array, it has been removed.`);
-            // repeat.remove();
+            // Recursively process children (important for <file> and <repeat>)
+            if (child.parentNode) {
+                walk(child);
+            }
         }
+    };
 
-        delete cstr[repeat.id];
-    }
-
-    for (const script of scripts) {
-        const obj = cstr[script.id];
-        if (obj) {
-            const replace = evaluate(script, script.id, obj as Constructor);
-            // console.log(replace.outerHTML);
-            script.replaceWith(replace);
-        } else {
-            console.warn(`Script ${script.id} is not defined, it has been removed.`);
-            // script.remove();
-        }
-
-        delete cstr[script.id];
-    }
-
-    for (const i of ifs) {
-        renderIfs(i, cstr[i.id] as Constructor);
-        delete cstr[i.id];
-    }
-
-    for (const s of switches) {
-        renderSwitch(s, cstr);
-        delete cstr[s.id];
-    }
-
-    // cleanup
-
-    root.querySelectorAll('script[cstr]').forEach(s => s.remove());
-    root.querySelectorAll('repeat').forEach(r => r.remove());
-    root.querySelectorAll('if').forEach(i => i.remove());
+    walk(root);
 
     return replace(root, cstr).outerHTML;
 };
 
 
-const renderIfs = (html: HTMLElement, cstr: Constructor) => {
+const renderIfs = (html: HTMLElement, cstr: Constructor, config?: RenderConfig) => {
     const id = html.getAttribute('id');
     if (!id) {
         console.warn('<if> is missing an id attribute.');
@@ -181,11 +241,11 @@ const renderIfs = (html: HTMLElement, cstr: Constructor) => {
 
     if (condition) {
         elseElement?.remove();
-        html.replaceWith(render(html.innerHTML, cstr));
+        html.replaceWith(render(html.innerHTML, cstr, config));
     } else {
         if (elseElement) {
             elseElement.remove();
-            html.replaceWith(render(elseElement.innerHTML, cstr));
+            html.replaceWith(render(elseElement.innerHTML, cstr, config));
         } else {
             html.remove();
         }
@@ -265,7 +325,7 @@ const renderFiles = (html: HTMLElement, cstr: Constructor, config?: RenderConfig
         const fragmentElement = parse(file);
 
         // Render the fragment with the sub-cstr
-        const rendered = render(fragmentElement.outerHTML, subCstr);
+        const rendered = render(fragmentElement.outerHTML, subCstr, config);
 
         html.replaceWith(rendered);
     } catch (err) {
@@ -275,7 +335,7 @@ const renderFiles = (html: HTMLElement, cstr: Constructor, config?: RenderConfig
     return html;
 };
 
-export const renderSwitch = (html: HTMLElement, cstr: Constructor) => {
+export const renderSwitch = (html: HTMLElement, cstr: Constructor, config?: RenderConfig) => {
     const id = html.getAttribute('id');
     
     // Check if the 'id' attribute exists
@@ -312,7 +372,7 @@ export const renderSwitch = (html: HTMLElement, cstr: Constructor) => {
             break;
         }
         if (caseCondition === condition) {
-            c.replaceWith(render(c.innerHTML, cstr)); 
+            c.replaceWith(render(c.innerHTML, cstr, config)); 
             matched = true;
         } else {
             c.remove();
@@ -320,7 +380,7 @@ export const renderSwitch = (html: HTMLElement, cstr: Constructor) => {
     }
 
     if (!matched && defaultCase) {
-        defaultCase.replaceWith(render(defaultCase.innerHTML, cstr));
+        defaultCase.replaceWith(render(defaultCase.innerHTML, cstr, config));
     }
 
     defaultCase?.remove();
