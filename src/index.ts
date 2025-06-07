@@ -389,3 +389,10 @@ export const renderSwitch = (html: HTMLElement, cstr: Constructor, config?: Rend
     html.replaceWith(...html.childNodes);
 };
 
+// const condense = (html: HTMLElement) => {
+//     // remove all redundancies
+//     // style tags
+//     html.querySelectorAll('style').forEach((s) => {
+//         s.remove();
+//     });
+// };
